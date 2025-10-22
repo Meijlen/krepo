@@ -22,26 +22,35 @@ class RepositoryContext(
     private var initialized: Boolean = false
     private var closed: Boolean = false
 
-    /**
-     * Registers the repository factory.
-     */
-    fun registerFactory(factory: RepositoryFactory) {
+
+    fun addFactory(factory: RepositoryFactory) {
         factories.add(factory)
-        config.logger?.invoke("Registered repository factory: ${factory::class.simpleName}")
     }
+
+    fun removeFactory(factory: RepositoryFactory) {
+        factories.remove(factory)
+    }
+
+    private val defaultFactory: RepositoryFactory?
+        get() = config.defaultFactory ?: factories.firstOrNull()
 
 
     /**
      * Registers the repository in the context.
      * Creates metadata and adds it to the cache.
      */
-    fun registerRepository(repositoryClass: KClass<out KtorRepository<*, *>>) {
-        if (repositories.containsKey(repositoryClass)) return
+    fun <R: KtorRepository<*,*>> registerRepository(repositoryClass: KClass<R>, factory: RepositoryFactory? = null) {
+        if (repositories.containsKey(repositoryClass)) {
+            val message = "Repository ${repositoryClass.simpleName} already registered!"
+            if (config.strictRegistration) throw RepositoryException(message)
+            else config.logger?.invoke("[RepositoryContext] $message — skipping.")
+            return
+        }
 
-        val factory = config.defaultFactory ?: factories.firstOrNull()
+        val chosenFactory = factory ?: defaultFactory
             ?: throw RepositoryException("No factory available to create repository $repositoryClass")
 
-        val repository = factory.createRepository(repositoryClass, this)
+        val repository = chosenFactory.createRepository(repositoryClass, this)
         repositories[repositoryClass] = repository
 
         val entityClass = ReflectionUtils.findEntityClass(repositoryClass)
@@ -57,8 +66,7 @@ class RepositoryContext(
             annotations
         )
 
-        config.logger?.invoke("Registered repository ${repositoryClass.simpleName} for entity ${entityClass.simpleName}")
-
+        config.logger?.invoke("[RepositoryContext] Registered repository ${repositoryClass.simpleName} for entity ${entityClass.simpleName}")
     }
 
     /**
@@ -66,11 +74,17 @@ class RepositoryContext(
      * If it does not exist yet, creates it via the factory.
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> getRepository(repositoryClass: KClass<out KtorRepository<*, *>>): T {
-        return repositories[repositoryClass] as? T ?: run {
-            registerRepository(repositoryClass)
-            repositories[repositoryClass] as T
-        }
+    fun <R : KtorRepository<*, *>> getRepository(repositoryClass: KClass<R>, factory: RepositoryFactory? = null): R {
+        repositories[repositoryClass]?.let { return it as R }
+
+        registerRepository(repositoryClass, factory)
+
+        return repositories[repositoryClass] as? R
+            ?: throw RepositoryException("Failed to retrieve repository ${repositoryClass.simpleName}")
+    }
+
+    inline fun <reified R: KtorRepository<*, *>> getRepository(): R {
+        return getRepository(R::class)
     }
 
     /**

@@ -23,4 +23,8 @@ data class RepositoryConfig(
      * You can pass your own implementation.
      */
     val logger: ((String) -> Unit)? = null,
+
+    val strictRegistration: Boolean = false,
+
+    val debug: Boolean = false
 )

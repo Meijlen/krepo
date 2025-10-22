@@ -12,8 +12,8 @@ interface RepositoryFactory {
      * Creates a repository for the specified interface.
      * Context and generic types will be retrieved via reflection inside the factory.
      */
-    fun createRepository(
-        repositoryClass: KClass<out KtorRepository<*, *>>,
+    fun <R : KtorRepository<*, *>> createRepository(
+        repositoryClass: KClass<R>,
         context: RepositoryContext
-    ): KtorRepository<*, *>
+    ): R
 }

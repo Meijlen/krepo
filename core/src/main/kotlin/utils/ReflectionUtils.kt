@@ -4,8 +4,10 @@ import exception.RepositoryException
 import repository.KtorRepository
 import repository.RepositoryMethod
 import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
+import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
+import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.reflect.full.memberProperties
 
 /**
  * Utility object for reflection operations on repository classes.
@@ -47,18 +49,21 @@ object ReflectionUtils {
         // Collect base method names to exclude them from custom methods
         val baseMethods = KtorRepository::class.members.map { it.name }.toSet()
 
-        return repositoryClass.members
-            .filterIsInstance<KFunction<*>>()
+        return repositoryClass.declaredMemberFunctions
             .filter { function ->
                 val name = function.name
-                // Match methods following Spring Data-like naming conventions
-                name.startsWith("findBy") ||
+                (name.startsWith("findBy") ||
                         name.startsWith("deleteBy") ||
                         name.startsWith("existBy") ||
-                        name.startsWith("countBy")
+                        name.startsWith("countBy")) &&
+                        !baseMethods.contains(name)
             }
-            .filterNot { baseMethods.contains(it.name) }
-            .map { RepositoryMethod(it, it.isSuspend) }
+            .map { function ->
+                RepositoryMethod(
+                    function = function,
+                    isSuspend = function.isSuspend,
+                )
+            }
     }
 
     /**
@@ -104,5 +109,10 @@ object ReflectionUtils {
             ?: throw RepositoryException("Cannot resolve ID type for ${repositoryClass.simpleName}")
 
         return entityClass to idClass
+    }
+
+    fun getAnnotatedProperties(kClass: KClass<*>, annotationClass: KClass<out Annotation>): List<KProperty1<out Any, *>> {
+        return kClass.memberProperties.filter { props ->
+            props.annotations.any { it.annotationClass == annotationClass } }
     }
 }
