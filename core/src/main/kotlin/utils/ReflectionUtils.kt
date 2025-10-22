@@ -3,10 +3,17 @@ package utils
 import exception.RepositoryException
 import repository.KtorRepository
 import repository.RepositoryMethod
+import repository.annotations.Column
+import repository.annotations.Entity
+import repository.annotations.Id
+import repository.annotations.Transient
+import repository.metadata.ColumnProperty
+import repository.metadata.EntityMetadata
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.KType
 import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 
 /**
@@ -111,8 +118,68 @@ object ReflectionUtils {
         return entityClass to idClass
     }
 
+    /**
+     * Returns all properties of the given [kClass] that are annotated with the specified [annotationClass].
+     *
+     * @param kClass the Kotlin class to inspect
+     * @param annotationClass the annotation to search for
+     * @return a list of [KProperty1] representing the annotated properties
+     */
     fun getAnnotatedProperties(kClass: KClass<*>, annotationClass: KClass<out Annotation>): List<KProperty1<out Any, *>> {
         return kClass.memberProperties.filter { props ->
             props.annotations.any { it.annotationClass == annotationClass } }
+    }
+
+    /**
+     * Extracts metadata from a given entity class annotated with [Entity].
+     *
+     * This function analyzes the class to determine:
+     * - its table name (from the @Entity annotation or class name)
+     * - all column properties (from @Column annotations, excluding @Transient)
+     * - the ID property (from @Id, if present)
+     *
+     * @param entityClass the entity class to extract metadata from
+     * @return an [EntityMetadata] object describing the entity
+     * @throws RepositoryException if:
+     *  - the class is missing an @Entity annotation
+     *  - multiple @Id fields are found
+     *  - a property type cannot be resolved
+     */
+    fun extractEntityMetadata(entityClass: KClass<*>): EntityMetadata {
+        val entityAnn = entityClass.findAnnotation<Entity>()
+            ?: throw RepositoryException("Missing @Entity annotation on ${entityClass.simpleName}")
+
+        val tableName = entityAnn.tableName.ifEmpty { entityClass.simpleName!!.lowercase() }
+
+        val columns = getAnnotatedProperties(entityClass, Column::class)
+            .filterNot { it.annotations.any { a -> a.annotationClass == Transient::class } }
+            .map { prop ->
+                val colAnn = prop.findAnnotation<Column>()!!
+                val name = colAnn.name.ifEmpty { prop.name }
+                val type = prop.returnType.classifier as? KClass<*>
+                    ?: throw RepositoryException("Cannot resolve type for property ${prop.name}")
+
+                ColumnProperty(
+                    name = name,
+                    type = type,
+                    nullable = colAnn.nullable,
+                    unique = colAnn.unique,
+                    defaultValue = colAnn.defaultValue.ifEmpty { null },
+                    length = colAnn.length.takeIf {it > 0 },
+                    precision = colAnn.precision.takeIf {it > 0},
+                    scale = colAnn.scale.takeIf {it > 0},
+                )
+            }
+
+        val idProps = getAnnotatedProperties(entityClass, Id::class)
+        if (idProps.size > 1) {
+            throw RepositoryException("Multiple @Id fields found in ${entityClass.simpleName}")
+        }
+
+        return EntityMetadata(
+            entityClass = entityClass,
+            tableName = tableName,
+            columns = columns,
+        )
     }
 }

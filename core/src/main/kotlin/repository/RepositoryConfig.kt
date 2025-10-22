@@ -24,7 +24,16 @@ data class RepositoryConfig(
      */
     val logger: ((String) -> Unit)? = null,
 
+    /**
+     * Whether to throw an exception when attempting to register
+     * an already existing repository.
+     * If true, duplicate registration will cause an error.
+     * If false, the existing repository will be skipped.
+     */
     val strictRegistration: Boolean = false,
 
+    /**
+     * Enables debug mode with additional logging and diagnostic information.
+     */
     val debug: Boolean = false
 )

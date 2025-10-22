@@ -57,13 +57,15 @@ class RepositoryContext(
         val idClass = ReflectionUtils.findIdClass(repositoryClass)
         val methods = ReflectionUtils.getRepositoryMethods(repositoryClass)
         val annotations = repositoryClass.annotations
+        val entityMetadata = ReflectionUtils.extractEntityMetadata(entityClass)
 
         metadata[repositoryClass] = RepositoryMetadata(
             repositoryClass,
             entityClass,
             idClass,
             methods,
-            annotations
+            annotations,
+            entityMetadata
         )
 
         config.logger?.invoke("[RepositoryContext] Registered repository ${repositoryClass.simpleName} for entity ${entityClass.simpleName}")

@@ -1,5 +1,6 @@
 package repository
 
+import repository.metadata.EntityMetadata
 import kotlin.reflect.KClass
 
 /**
@@ -20,7 +21,13 @@ data class RepositoryMetadata(
     /** Methods declared in the repository interface */
     val methods: List<RepositoryMethod> = emptyList(),
 
-
     /** Additional properties or annotations, if needed */
     val annotations: List<Annotation> = emptyList(),
+
+    /**
+     * Cached metadata about the entity structure.
+     * Contains information about entity fields, table name, etc.
+     * Used to avoid repeated reflection calls during repository operations.
+     */
+    val entityMetadata: EntityMetadata? = null
 )
