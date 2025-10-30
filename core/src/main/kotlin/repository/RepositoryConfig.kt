@@ -1,5 +1,7 @@
 package repository
 
+import repository.access.DataAccessor
+
 /**
  * Configuration for RepositoryContext.
  * Allows you to set default strategies, logging, and factories.

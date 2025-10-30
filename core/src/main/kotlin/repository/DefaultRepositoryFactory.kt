@@ -1,8 +1,10 @@
 package repository
 
 import exception.RepositoryException
+import repository.access.DataAccessor
+
+import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
-import kotlin.reflect.full.primaryConstructor
 
 /**
  * Default implementation of RepositoryFactory.
@@ -14,13 +16,32 @@ import kotlin.reflect.full.primaryConstructor
  * @throws RepositoryException if the repository class has no primary constructor.
  */
 class DefaultRepositoryFactory: RepositoryFactory {
+
+    @Suppress("UNCHECKED_CAST")
     override fun <R : KtorRepository<*, *>> createRepository(
         repositoryClass: KClass<R>,
         context: RepositoryContext
     ): R {
-        val constructor = repositoryClass.primaryConstructor
-            ?: throw RepositoryException("No primary constructor found for ${repositoryClass.simpleName}")
+        val metadata = context.metadata[repositoryClass]
+            ?: throw RepositoryException("Metadata for ${repositoryClass.simpleName} not found")
 
-        return constructor.call(context)
+        val dataAccessor = context.dataAccessorProvider(metadata) as DataAccessor<Any, Any>
+
+        val crudDelegate = CrudRepositoryDelegate(
+            dataAccessor,
+            metadata.entityMetadata
+        )
+
+        val handler = RepositoryInvocationHandler(
+            metadata,
+            crudDelegate,
+            dataAccessor
+        )
+        
+        return Proxy.newProxyInstance(
+            repositoryClass.java.classLoader,
+            arrayOf(repositoryClass.java),
+            handler
+        ) as R
     }
 }

@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 
 include("core")
 include("app")
+include("ktor-repository-exposed")

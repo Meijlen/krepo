@@ -15,6 +15,7 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.isAccessible
 
 /**
  * Utility object for reflection operations on repository classes.
@@ -181,5 +182,22 @@ object ReflectionUtils {
             tableName = tableName,
             columns = columns,
         )
+    }
+
+    fun getIdValue(entity: Any): Any? {
+        val entityClass = entity::class
+
+        val idProps = getAnnotatedProperties(entityClass, Id::class)
+
+        if (idProps.size > 1) {
+            throw RepositoryException("Multiple @Id fields found in ${entityClass.simpleName}")
+        }
+
+        val idProp = idProps.first()
+
+        idProp.isAccessible = true
+
+        @Suppress("UNCHECKED_CAST")
+        return (idProp as KProperty1<Any, *>).get(idProp)
     }
 }

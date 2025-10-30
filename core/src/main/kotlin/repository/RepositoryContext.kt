@@ -1,8 +1,14 @@
 package repository
 
 import exception.RepositoryException
+import query.MethodNameParser
+import query.ParsedMethod
+import repository.access.DataAccessor
 import utils.ReflectionUtils
 import kotlin.reflect.KClass
+import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.memberProperties
 
 /**
  * Central container for managing the lifecycle of repositories.
@@ -11,13 +17,13 @@ import kotlin.reflect.KClass
  */
 class RepositoryContext(
     val config: RepositoryConfig,
-    val  databaseContext: Any? = null,
+    val dataAccessorProvider: (metadata: RepositoryMetadata) -> DataAccessor<*, *>,
 ) {
     private val factories: MutableList<RepositoryFactory> = mutableListOf()
 
     private val repositories: MutableMap<KClass<*>, KtorRepository<*, *>> = mutableMapOf()
 
-    private val metadata: MutableMap<KClass<*>, RepositoryMetadata> = mutableMapOf()
+    val metadata: MutableMap<KClass<*>, RepositoryMetadata> = mutableMapOf()
 
     private var initialized: Boolean = false
     private var closed: Boolean = false
@@ -33,6 +39,7 @@ class RepositoryContext(
 
     private val defaultFactory: RepositoryFactory?
         get() = config.defaultFactory ?: factories.firstOrNull()
+
 
 
     /**
@@ -56,6 +63,12 @@ class RepositoryContext(
         val entityClass = ReflectionUtils.findEntityClass(repositoryClass)
         val idClass = ReflectionUtils.findIdClass(repositoryClass)
         val methods = ReflectionUtils.getRepositoryMethods(repositoryClass)
+        val baseMethodNames = CrudRepository::class.declaredMemberFunctions.map { it.name }.toSet()
+        val parsedMethods: Map<String, ParsedMethod> = methods.associate { repositoryMethod ->
+            val methodName = repositoryMethod.function.name
+
+            methodName to MethodNameParser.parse(methodName)
+        }
         val annotations = repositoryClass.annotations
         val entityMetadata = ReflectionUtils.extractEntityMetadata(entityClass)
 
@@ -64,6 +77,8 @@ class RepositoryContext(
             entityClass,
             idClass,
             methods,
+            baseMethodNames,
+            parsedMethods,
             annotations,
             entityMetadata
         )
