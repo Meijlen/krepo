@@ -1,25 +1,42 @@
-val logback_version: String by project
-
 plugins {
     kotlin("jvm")
-    id("com.google.devtools.ksp")
+    id("maven-publish")
+    id("org.jetbrains.dokka")
 }
 
-group = "io.github.meijlen.ktor-repository"
+group = "io.github.meijlen"
 version = "0.0.1"
 
 repositories {
     mavenCentral()
 }
 
-dependencies {
-    implementation(kotlin("reflect"))
-    implementation("com.google.dagger:dagger-compiler:2.51.1")
-    ksp("com.google.dagger:dagger-compiler:2.51.1")
-    testImplementation(kotlin("test"))
-    implementation("ch.qos.logback:logback-classic:${logback_version}")
-}
-
 kotlin {
     jvmToolchain(17)
+}
+
+dependencies {
+    api(kotlin("reflect"))
+    api("ch.qos.logback:logback-classic:1.5.8")
+
+    testImplementation(kotlin("test"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
+    repositories {
+        maven {
+            name = "local"
+            url = uri("../repo")
+        }
+    }
 }

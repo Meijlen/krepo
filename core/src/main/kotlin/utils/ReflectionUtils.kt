@@ -184,6 +184,25 @@ object ReflectionUtils {
         )
     }
 
+    /**
+     * Extracts the ID value from an entity instance.
+     *
+     * Uses reflection to locate the @Id annotated property and retrieve its value.
+     * Critical for the delete operation in CrudRepositoryDelegate, which needs to
+     * extract the ID from an entity object to call deleteById.
+     *
+     * Example usage in CrudRepositoryDelegate.delete:
+     * ```kotlin
+     * override suspend fun delete(entity: E): Boolean {
+     *     val id = ReflectionUtils.getIdValue(entity) as? ID ?: return false
+     *     return deleteById(id)
+     * }
+     * ```
+     *
+     * @param entity the entity instance to extract the ID from
+     * @return the ID value, or null if the ID property is not set
+     * @throws RepositoryException if multiple @Id fields are found
+     */
     fun getIdValue(entity: Any): Any? {
         val entityClass = entity::class
 

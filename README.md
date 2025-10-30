@@ -1,44 +1,62 @@
-# ktor-repository
+# KRepo
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
+**Lightweight, extensible Repository pattern abstraction for Kotlin/Ktor**
 
-Here are some useful links to get you started:
+[![Kotlin](https://img.shields.io/badge/kotlin-2.0.20-blue.svg?logo=kotlin)](https://kotlinlang.org)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-- [Ktor Documentation](https://ktor.io/docs/home.html)
-- [Ktor GitHub page](https://github.com/ktorio/ktor)
-- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). You'll need
-  to [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to join.
+> **No Spring. No boilerplate. Just clean, suspendable, dynamic repositories.**
+
+---
+
+## Important Foreword
+
+> **I am practically unfamiliar with open-source culture and advanced version control. I would appreciate help with formatting readme.md, etc.**
+---
 
 ## Features
 
-Here's a list of features included in this project:
+- **Suspendable CRUD** — full `suspend` support, coroutine-friendly
+- **Zero reflection at runtime** — metadata built once via reflection, then cached
+- **Proxy-based repositories** — no manual implementation needed
 
-| Name                                                                   | Description                                                                        |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [Routing](https://start.ktor.io/p/routing)                             | Provides a structured routing DSL                                                  |
-| [Content Negotiation](https://start.ktor.io/p/content-negotiation)     | Provides automatic content conversion according to Content-Type and Accept headers |
-| [kotlinx.serialization](https://start.ktor.io/p/kotlinx-serialization) | Handles JSON serialization using kotlinx.serialization library                     |
-| [Exposed](https://start.ktor.io/p/exposed)                             | Adds Exposed database to your application                                          |
-| [Postgres](https://start.ktor.io/p/postgres)                           | Adds Postgres database to your application                                         |
+---
 
-## Building & Running
+## Upcoming features
+- **Dynamic method parsing** — `findByNameAndAgeGreaterThan` → SQL/Mongo query via implementations
+- **Pluggable data access** — `DataAccessor` for Exposed, MongoDB, JDBC, in-memory
+- **Ktor-ready** — lightweight, no heavy DI
+---
 
-To build or run the project, use one of the following tasks:
+## Project To-Do List
 
-| Task                                    | Description                                                          |
-|-----------------------------------------|----------------------------------------------------------------------|
-| `./gradlew test`                        | Run the tests                                                        |
-| `./gradlew build`                       | Build everything                                                     |
-| `./gradlew buildFatJar`                 | Build an executable JAR of the server with all dependencies included |
-| `./gradlew buildImage`                  | Build the docker image to use with the fat JAR                       |
-| `./gradlew publishImageToLocalRegistry` | Publish the docker image locally                                     |
-| `./gradlew run`                         | Run the server                                                       |
-| `./gradlew runDocker`                   | Run using the local docker image                                     |
+| Ready | Module          | Description |
+|---|-----------------|-------------|
+| ✓ | `krepo-core`    | Core abstraction: `RepositoryContext`, `DataAccessor`, proxies |
+| - | `krepo-exposed` | Exposed ORM integration |
+| - | `krepo-mongo`   | MongoDB driver support | 
+| - | `sample`        | Full Ktor app example |
 
-If the server starts successfully, you'll see the following output:
+---
+
+## License
 
 ```
-2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
-2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
+Copyright 2025 Meijlen
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 ```
 
+---
+
+Made with ❤️ in Kotlin
