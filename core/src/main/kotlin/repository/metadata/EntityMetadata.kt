@@ -15,19 +15,6 @@ import kotlin.reflect.KClass
  * - [RepositoryInvocationHandler] to resolve custom query method field references
  * - Schema generation tools to create/migrate database tables
  *
- * Example usage:
- * ```kotlin
- * val userMetadata = EntityMetadata(
- *     entityClass = User::class,
- *     tableName = "users",
- *     columns = listOf(
- *         ColumnProperty("id", Long::class),
- *         ColumnProperty("name", String::class).length(255),
- *         ColumnProperty("email", String::class).unique()
- *     )
- * )
- * ```
- *
  * @property entityClass the Kotlin class that represents this entity
  * @property tableName the database table name this entity maps to
  * @property columns list of all column mappings for this entity (empty list if not configured)
@@ -35,5 +22,5 @@ import kotlin.reflect.KClass
 data class EntityMetadata(
     val entityClass: KClass<*>,
     val tableName: String,
-    val columns: List<ColumnProperty> = emptyList(),
+    val columns: List<EntityColumn> = emptyList(),
 )

@@ -12,7 +12,7 @@ package repository.annotations
  * @property precision Total number of digits for numeric columns.
  * @property scale Number of digits after decimal point for numeric columns.
  */
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Column(
     val name: String = "",

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("jvm")
     id("maven-publish")
@@ -20,7 +22,8 @@ dependencies {
     api("ch.qos.logback:logback-classic:1.5.8")
 
     testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.0")
+    testImplementation("io.mockk:mockk:1.14.6")
 }
 
 tasks.test {
@@ -39,4 +42,9 @@ publishing {
             url = uri("../repo")
         }
     }
+}
+
+val compileTestKotlin: KotlinCompile by tasks
+compileTestKotlin.compilerOptions {
+    freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
 }

@@ -61,8 +61,10 @@ object MethodNameParser {
 
         val conditions = tokens.mapIndexed { index, token ->
             val (field, operator) = extractFieldAndOperator(token)
-            val logical = if (index == 0) LogicalOperator.AND else logicalOperators.getOrElse(index) { LogicalOperator.AND }
-
+            val logical = when (index) {
+                0 -> LogicalOperator.AND
+                else -> logicalOperators.getOrElse(index - 1) { LogicalOperator.AND }
+            }
             QueryCondition(
                 field = field,
                 operator = operator,

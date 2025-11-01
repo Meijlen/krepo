@@ -8,6 +8,7 @@ import repository.annotations.Entity
 import repository.annotations.Id
 import repository.annotations.Transient
 import repository.metadata.ColumnProperty
+import repository.metadata.EntityColumn
 import repository.metadata.EntityMetadata
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -152,35 +153,50 @@ object ReflectionUtils {
 
         val tableName = entityAnn.tableName.ifEmpty { entityClass.simpleName!!.lowercase() }
 
-        val columns = getAnnotatedProperties(entityClass, Column::class)
-            .filterNot { it.annotations.any { a -> a.annotationClass == Transient::class } }
+        val idProps = getAnnotatedProperties(entityClass, Id::class)
+        if (idProps.size != 1) {
+            throw RepositoryException("Expected exactly one @Id field in ${entityClass.simpleName}, found ${idProps.size}")
+        }
+        val idPropSet = idProps.toSet()
+
+        val allProperties = entityClass.memberProperties
+
+        val entityColumns = allProperties
+            .filterNot { prop ->
+                prop.annotations.any { it.annotationClass == Transient::class }
+            }
             .map { prop ->
-                val colAnn = prop.findAnnotation<Column>()!!
-                val name = colAnn.name.ifEmpty { prop.name }
-                val type = prop.returnType.classifier as? KClass<*>
+                val isId = idPropSet.contains(prop)
+                val colAnn = prop.findAnnotation<Column>()
+
+                val colName = colAnn?.name?.ifEmpty { prop.name } ?: prop.name
+                val colType = prop.returnType.classifier as? KClass<*>
                     ?: throw RepositoryException("Cannot resolve type for property ${prop.name}")
 
-                ColumnProperty(
-                    name = name,
-                    type = type,
-                    nullable = colAnn.nullable,
-                    unique = colAnn.unique,
-                    defaultValue = colAnn.defaultValue.ifEmpty { null },
-                    length = colAnn.length.takeIf {it > 0 },
-                    precision = colAnn.precision.takeIf {it > 0},
-                    scale = colAnn.scale.takeIf {it > 0},
+                val nullable = prop.returnType.isMarkedNullable
+
+                val columnMetadata = ColumnProperty(
+                    name = colName,
+                    type = colType,
+                    nullable = nullable,
+                    unique = colAnn?.unique ?: isId, // ID уникален по умолчанию
+                    defaultValue = colAnn?.defaultValue?.ifEmpty { null },
+                    length = colAnn?.length?.takeIf { it > 0 },
+                    precision = colAnn?.precision?.takeIf { it > 0 },
+                    scale = colAnn?.scale?.takeIf { it > 0 }
+                )
+
+                EntityColumn(
+                    kotlinProperty = prop,
+                    columnMetadata = columnMetadata,
+                    isId = isId
                 )
             }
-
-        val idProps = getAnnotatedProperties(entityClass, Id::class)
-        if (idProps.size > 1) {
-            throw RepositoryException("Multiple @Id fields found in ${entityClass.simpleName}")
-        }
 
         return EntityMetadata(
             entityClass = entityClass,
             tableName = tableName,
-            columns = columns,
+            columns = entityColumns, // <-- Теперь это List<EntityColumn>
         )
     }
 
@@ -206,17 +222,20 @@ object ReflectionUtils {
     fun getIdValue(entity: Any): Any? {
         val entityClass = entity::class
 
-        val idProps = getAnnotatedProperties(entityClass, Id::class)
+        val idProps = getAnnotatedProperties(entityClass, Id::class) //
 
-        if (idProps.size > 1) {
-            throw RepositoryException("Multiple @Id fields found in ${entityClass.simpleName}")
+        if (idProps.size > 1) { //
+            throw RepositoryException("Multiple @Id fields found in ${entityClass.simpleName}") //
+        }
+        if (idProps.isEmpty()) {
+            throw RepositoryException("No @Id field found in ${entityClass.simpleName}")
         }
 
         val idProp = idProps.first()
 
-        idProp.isAccessible = true
+        idProp.isAccessible = true //
 
         @Suppress("UNCHECKED_CAST")
-        return (idProp as KProperty1<Any, *>).get(idProp)
+        return (idProp as KProperty1<Any, *>).get(entity)
     }
 }
