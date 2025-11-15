@@ -11,7 +11,7 @@
 
 ## Important Foreword
 
-> **I am practically unfamiliar with open-source culture and advanced version control. I would appreciate help with formatting readme.md, etc.**
+> **I am practically unfamiliar with open-source culture and advanced version control. I would appreciate any help.**
 ---
 
 ## Features
