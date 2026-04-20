@@ -9,11 +9,6 @@
 
 ---
 
-## Important Foreword
-
-> **I am practically unfamiliar with open-source culture and advanced version control. I would appreciate any help.**
----
-
 ## Features
 
 - **Suspendable CRUD** — full `suspend` support, coroutine-friendly
